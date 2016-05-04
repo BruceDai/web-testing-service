@@ -20,30 +20,11 @@
 ** TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 ** MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
 */
-var caseName = document.title;
-var subcaseIndex = 1;
-
-function KhronosTest(name) {
-  this.name = name;
-  this.status = null;
-  this.message = null;
-}
-
-var khronosTests = [];
-var khronosTestMsg = null;
-
-function Status() {
-  this.status = null;
-  this.message = null;
-}
-
-var statusObj = new Status();
-statusObj.status = 0;
 
 (function() {
   var testHarnessInitialized = false;
 
-  var initNonKhronosFramework = function(waitUntilDone) {
+  var initNonKhronosFramework = function() {
     if (testHarnessInitialized) {
       return;
     }
@@ -59,9 +40,7 @@ statusObj.status = 0;
     if (window.layoutTestController) {
       layoutTestController.overridePreference("WebKitWebGLEnabled", "1");
       layoutTestController.dumpAsText();
-      if (waitUntilDone) {
-        layoutTestController.waitUntilDone();
-      }
+      layoutTestController.waitUntilDone();
     }
     if (window.internals) {
       // The WebKit testing system compares console output.
@@ -80,12 +59,8 @@ statusObj.status = 0;
     /* -- end platform specific code --*/
   }
 
-  this.initTestingHarnessWaitUntilDone = function() {
-    initNonKhronosFramework(true);
-  }
-
   this.initTestingHarness = function() {
-    initNonKhronosFramework(false);
+    initNonKhronosFramework();
   }
 }());
 
@@ -103,10 +78,6 @@ function reportTestResultsToHarness(success, msg) {
 }
 
 function notifyFinishedToHarness() {
-  if (window.parent.completion_callback) {
-    window.parent.completion_callback(khronosTests, statusObj);
-  }
-
   if (window.parent.webglTestHarness) {
     window.parent.webglTestHarness.notifyFinished(window.location.pathname);
   }
@@ -115,16 +86,24 @@ function notifyFinishedToHarness() {
   }
 }
 
+function _logToConsole(msg)
+{
+    if (window.console)
+      window.console.log(msg);
+}
+
+var _jsTestPreVerboseLogging = false;
+
+function enableJSTestPreVerboseLogging()
+{
+    _jsTestPreVerboseLogging = true;
+}
+
 function description(msg)
 {
     initTestingHarness();
     if (msg === undefined) {
       msg = document.title;
-    }
-    else {
-      if (document.title.length === 0) {
-        caseName = msg;
-      }
     }
     // For MSIE 6 compatibility
     var span = document.createElement("span");
@@ -134,13 +113,24 @@ function description(msg)
         description.replaceChild(span, description.firstChild);
     else
         description.appendChild(span);
+    if (_jsTestPreVerboseLogging) {
+        _logToConsole(msg);
+    }
+}
+
+function _addSpan(contents)
+{
+    var span = document.createElement("span");
+    document.getElementById("console").appendChild(span); // insert it first so XHTML knows the namespace
+    span.innerHTML = contents + '<br />';
 }
 
 function debug(msg)
 {
-    var span = document.createElement("span");
-    document.getElementById("console").appendChild(span); // insert it first so XHTML knows the namespace
-    span.innerHTML = msg + '<br />';
+    _addSpan(msg);
+    if (_jsTestPreVerboseLogging) {
+	_logToConsole(msg);
+    }
 }
 
 function escapeHTML(text)
@@ -150,31 +140,18 @@ function escapeHTML(text)
 
 function testPassed(msg)
 {
-    //console.log("webgl function testPassed:" + msg)
-    if (msg !== "successfullyParsed is true") {
-      var ktest = new KhronosTest(caseName + "/" + subcaseIndex);
-      ktest.status = 0;
-      ktest.message = escapeHTML(msg);
-      khronosTests.push(ktest);
-      subcaseIndex++;
-    }
-
     reportTestResultsToHarness(true, msg);
-    debug('<span><span class="pass">PASS</span> ' + escapeHTML(msg) + '</span>');
+    _addSpan('<span><span class="pass">PASS</span> ' + escapeHTML(msg) + '</span>');
+    if (_jsTestPreVerboseLogging) {
+	_logToConsole('PASS ' + msg);
+    }
 }
 
 function testFailed(msg)
 {
-    if (msg.indexOf("successfullyParsed should be true") === -1) {
-        var ktest = new KhronosTest(caseName + "/" + subcaseIndex);
-        ktest.status = 1;
-        ktest.message = escapeHTML(msg);
-        khronosTests.push(ktest);
-        subcaseIndex++;
-    }
-
     reportTestResultsToHarness(false, msg);
-    debug('<span><span class="fail">FAIL</span> ' + escapeHTML(msg) + '</span>');
+    _addSpan('<span><span class="fail">FAIL</span> ' + escapeHTML(msg) + '</span>');
+    _logToConsole('FAIL ' + msg);
 }
 
 function areArraysEqual(_a, _b)
@@ -458,21 +435,32 @@ function shouldThrow(_a, _e)
 }
 
 function shouldBeType(_a, _type) {
-	var exception;
-	var _av;
-	try {
-		_av = eval(_a);
-	} catch (e) {
-		exception = e;
-	}
+    var exception;
+    var _av;
+    try {
+        _av = eval(_a);
+    } catch (e) {
+        exception = e;
+    }
 
-	var _typev = eval(_type);
+    var _typev = eval(_type);
 
-	if (_av instanceof _typev) {
-		testPassed(_a + " is an instance of " + _type);
-	} else {
-		testFailed(_a + " is not an instance of " + _type);
-	}
+    if(_typev === Number){
+        if(_av instanceof Number){
+            testPassed(_a + " is an instance of Number");
+        }
+        else if(typeof(_av) === 'number'){
+            testPassed(_a + " is an instance of Number");
+        }
+        else{
+            testFailed(_a + " is not an instance of Number");
+        }
+    }
+    else if (_av instanceof _typev) {
+        testPassed(_a + " is an instance of " + _type);
+    } else {
+        testFailed(_a + " is not an instance of " + _type);
+    }
 }
 
 function assertMsg(assertion, msg) {
@@ -515,7 +503,6 @@ function gc() {
 function finishTest() {
   successfullyParsed = true;
   var epilogue = document.createElement("script");
-
   var basePath = "";
   var expectedBase = "js-test-pre.js";
   var scripts = document.getElementsByTagName('script');

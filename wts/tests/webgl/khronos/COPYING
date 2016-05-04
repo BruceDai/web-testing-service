@@ -1,15 +1,96 @@
 All test cases in this folder and subfolder resources/ come from
-https://github.com/KhronosGroup/WebGL/tree/master/conformance-suites/1.0.2
-(commit 565caccd32ad10d4ffc268049c0ef4219e2ffbe4)
+https://github.com/KhronosGroup/WebGL/tree/master/conformance-suites/1.0.3
 with modification:
 
-origin-clean-conformance.html
-readPixelsBadArgs.html
+unit.css
+-.ok {
+ +.pass {
 
-Update cross domain with server.js.
-
-Update khronos harness for web testing service: js-test-pre.js, unit.js, unit.css
-https://github.com/crosswalk-project/crosswalk-test-suite/pull/2986
+unit.js
+ var __testLog__;
+  var __backlog__ = [];
+  
+ +var caseName = null;
+ +var subcaseIndex = 0;
+ +
+ +function KhronosUnitTest(name) {
+ +  this.name = name;
+ +  this.status = null;
+ +  this.message = null;
+ +}
+ +
+ +var khronosUnitTests = [];
+ +var khronosUnitTestMsg = null;
+ +
+ +function Status() {
+ +  this.status = null;
+ +  this.message = null;
+ +}
+ +
+ +var statusObj = new Status();
+ +statusObj.status = 0;
+ +
+Object.toSource = function(a, seen){
+    if (a == null) return "null";
+    if (typeof a == 'boolean') return a ? "true" : "false";
+      __testLog__ = document.createElement('div');
+      __testSuccess__ = true;
+      try {
+ +      caseName = i;
+ +      subcaseIndex = 1;
+ +
+        doTestNotify (i);
+        var args = setup_args;
+        if (Tests.setup != null)
+  }
+  
+  function testFailed(assertName, name) {
+ +  var kutest = new KhronosUnitTest(caseName + "/" + subcaseIndex);
+ +  kutest.status = 1;
+ +  kutest.message = name;
+ +  khronosUnitTests.push(kutest);
+ +  subcaseIndex += 1;
+ +
+    var d = document.createElement('div');
+    var h = document.createElement('h3');
+    var d1 = document.createElement("span");
+  }
+function testPassed(assertName, name) {
+ +  var kutest = new KhronosUnitTest(caseName + "/" + subcaseIndex);
+ +  kutest.status = 0;
+ +  kutest.message = name;
+ +  khronosUnitTests.push(kutest);
+ +  subcaseIndex += 1;
+ +
+    var d = document.createElement('div');
+    var h = document.createElement('h3');
+    var d1 = document.createElement("span");
+    h.appendChild(document.createTextNode(
+        name==null ? assertName : name + " (in " + assertName + ")"));
+    d.appendChild(h);
+ +  kutest.message = name==null ? assertName : name + " (in " + assertName + ")";
+    var args = []
+    for (var i=2; i<arguments.length; i++) {
+      var a = arguments[i];
+      var p = document.createElement('p');
+      p.style.whiteSpace = 'pre';
+      p.textContent = (a == null) ? "null" :
+                      (typeof a == 'boolean' || typeof a == 'string') ? a : Object.toSource(a);
+ +    kutest.message += "\n" + p.textContent;
+      args.push(p.textContent);
+      d.appendChild(p);
+    }
+  function printTestStatus(testsRun) {
+    var status = document.getElementById('test-status');
+    if (testsRun) {
+ -    status.className = checkTestSuccess() ? 'ok' : 'fail';
+ +    status.className = checkTestSuccess() ? 'pass' : 'fail';
+      status.textContent = checkTestSuccess() ? "PASS" : "FAIL";
+    } else {
+      status.className = 'fail';
+     status.textContent = "NO TESTS FOUND";
+   }
+ }
 
 
 These tests are copyright by the Khronos Group under MIT License:
@@ -35,3 +116,4 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
 CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+
